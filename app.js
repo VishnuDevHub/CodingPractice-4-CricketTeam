@@ -34,7 +34,15 @@ app.get("/players/", async (request, response) => {
         SELECT * FROM cricket_team;
     `;
   const playersArray = await db.all(getPlayersQuery);
-  response.send(playersArray);
+  const ans = (eachPlayerObj) => {
+    return {
+      playerId: eachPlayerObj.player_id,
+      playerName: eachPlayerObj.player_name,
+      jerseyNumber: eachPlayerObj.jersey_number,
+      role: eachPlayerObj.role,
+    };
+  };
+  response.send(playersArray.map((eachPlayerObj) => ans(eachPlayerObj)));
 });
 
 // ADD Player API
@@ -50,9 +58,9 @@ app.post("/players/", async (request, response) => {
             role
         )
         VALUES(
-            ${playerName},
+            '${playerName}',
             ${jerseyNumber},
-            ${role}
+            '${role}'
         );`;
 
   const dbResponse = await db.run(addPlayerQuery);
@@ -69,8 +77,13 @@ app.get("/players/:playerId/", async (request, response) => {
         SELECT * FROM cricket_team WHERE player_id = ${playerId};
     `;
 
-  const playerArray = await db.get(getPlayerQuery);
-  response.send(playerArray);
+  const playerArrayObj = await db.get(getPlayerQuery);
+  response.send({
+    playerId: playerArrayObj.player_id,
+    playerName: playerArrayObj.player_name,
+    jerseyNumber: playerArrayObj.jersey_number,
+    role: playerArrayObj.role,
+  });
 });
 
 // Update Player API
@@ -91,4 +104,16 @@ app.put("/players/:playerId/", async (request, response) => {
   response.send("Player Details Updated");
 });
 
-module.exports = express;
+//Delete Player API
+
+app.delete("/players/:playerId", async (request, response) => {
+  const { playerId } = request.params;
+  const deletePlayerQuery = `
+        DELETE FROM cricket_team
+        WHERE player_id = ${playerId};
+    `;
+  await db.run(deletePlayerQuery);
+  response.send("Player Removed");
+});
+
+module.exports = app;
